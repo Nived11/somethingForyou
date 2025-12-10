@@ -30,15 +30,16 @@ import { defaultAudioTracks } from "../config/audioConfig";
 const CreateExperience = () => {
   const navigate = useNavigate();
 
-  const {
-    step,
-    setStep,
-    isLoading,
-    formData,
-    updateFormData,
-    canProceed,
-    handleSubmit,
-  } = useCreateExperience();
+const {
+  step,
+  setStep,
+  isLoading,
+  uploadProgress,
+  formData,
+  updateFormData,
+  canProceed,
+  handleSubmit,
+} = useCreateExperience();
 
   const { photos, previewUrls, handlePhotoUpload, removePhoto } =
     usePhotoUpload(15);
@@ -612,40 +613,63 @@ const CreateExperience = () => {
             )}
 
             <button
-              onClick={() => {
-                if (step === 4) {
-                  onSubmit();
-                } else {
-                  setStep(step + 1);
-                }
-              }}
-              disabled={
-                !canProceed(
-                  step,
-                  photos.length,
-                  musicChoice,
-                  customMusicFile
-                ) || isLoading
-              }
+  onClick={() => {
+    if (step === 4) {
+      onSubmit();
+    } else {
+      setStep(step + 1);
+    }
+  }}
+  disabled={
+    !canProceed(
+      step,
+      photos.length,
+      musicChoice,
+      customMusicFile
+    ) || isLoading
+  }
               className={`ml-auto px-6 md:px-8 py-2 md:py-3 rounded-full font-semibold flex items-center gap-2 transition-all text-sm md:text-base ${
-                canProceed(step, photos.length, musicChoice, customMusicFile) &&
-                !isLoading
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  <span>Creating...</span>
-                </>
-              ) : (
-                <>
-                  <span>{step === 4 ? "Create Now" : "Next"}</span>
-                  <ArrowRight size={18} />
-                </>
-              )}
-            </button>
+    canProceed(step, photos.length, musicChoice, customMusicFile) &&
+    !isLoading
+      ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg"
+      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+  }`}
+>
+  {isLoading ? (
+    <>
+      <Loader2 size={18} className="animate-spin" />
+      <span>
+        {uploadProgress < 40 
+          ? `Compressing... ${Math.round(uploadProgress)}%`
+          : uploadProgress < 100
+          ? `Uploading... ${Math.round(uploadProgress)}%`
+          : 'Creating...'}
+      </span>
+    </>
+  ) : (
+    <>
+      <span>{step === 4 ? "Create Now" : "Next"}</span>
+      <ArrowRight size={18} />
+    </>
+  )}
+</button>
+{isLoading && (
+  <div className="mb-4">
+    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div
+        className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 transition-all duration-300"
+        style={{ width: `${uploadProgress}%` }}
+      />
+    </div>
+    <p className="text-xs text-gray-600 text-center mt-2">
+      {uploadProgress < 40 
+        ? 'Compressing images for faster upload...'
+        : uploadProgress < 100
+        ? 'Uploading to cloud...'
+        : 'Almost done...'}
+    </p>
+  </div>
+)}
           </div>
         </motion.div>
       </div>

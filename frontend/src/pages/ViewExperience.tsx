@@ -51,7 +51,7 @@ const ViewExperience = () => {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-white text-center px-4">
         <div>
-          <h1 className="text-3xl md:text-4xl mb-4">😕 {error || 'Experience Not Found'}</h1>
+          <h1 className="text-3xl md:text-4xl mb-4"> {error || 'Experience Not Found'}</h1>
           <p className="text-gray-400 mb-6">This link may have expired or doesn't exist.</p>
           <a 
             href="/" 

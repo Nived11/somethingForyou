@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef,  } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -48,14 +48,24 @@ const TwinklingStars = () => {
 // BRIGHT VISIBLE MOON - Lower position
 const Moon = () => {
   return (
-    <group position={[20, 34, -80]}>
+    <group position={[40, 55, -180]}>
       
       <mesh>
-        <sphereGeometry args={[5, 30, 35]} />
+        <sphereGeometry args={[5, 30, 38]} />
         <meshBasicMaterial
-          color="#ececec95"
+          color="#faf9d7ff"
           transparent
-          opacity={0.9}
+          opacity={0.15}
+          fog={false}
+          depthWrite={false}
+        />
+      </mesh>
+      <mesh>
+        <sphereGeometry args={[4, 35, 35]} />
+        <meshBasicMaterial
+          color="#faf9d7ff"
+          transparent
+          opacity={0.6}
           fog={false}
           depthWrite={false}
         />
@@ -590,7 +600,7 @@ const CameraController = ({ targetPosition }: { targetPosition: [number, number,
   return null;
 };
 
-const Arrival = ({ data = { recipientName: 'You', senderName: 'Me' }, onNext = () => {} }) => {
+const Arrival = ({ onNext = () => {} }) => {
   const [characterPosition, setCharacterPosition] = useState<[number, number, number]>([0, 0, 12]);
   const [isStarted, setIsStarted] = useState(false);
   const [reachedDoor, setReachedDoor] = useState(false);
@@ -598,28 +608,26 @@ const Arrival = ({ data = { recipientName: 'You', senderName: 'Me' }, onNext = (
   const [playKnockSound, setPlayKnockSound] = useState(false);
   const [stepCount, setStepCount] = useState(0);
 
-  // Progressive messages that appear as you walk
+  // REDUCED: Only 8 meaningful messages for 8 steps
   const messages = [
-    "Every journey begins with a single step...",
-    "Life is a series of moments, each one precious...",
-    "Sometimes the smallest steps lead to the biggest adventures...",
-    "Keep moving forward, even when the path is unclear...",
-    "The distance doesn't matter, what matters is that you're walking...",
-    "Each step brings you closer to something beautiful...",
-    "Remember, the journey is just as important as the destination...",
-    "You're doing great, keep going...",
-    "Almost there, don't give up now...",
-    "Your destination awaits, just a little further...",
-    "The door is near, your journey is about to complete...",
-    "One more step, you're almost home...",
+    "Taking the first step is always the hardest...",
+    "You're braver than you believe...",
+    "Every moment with you is special...",
+    "Keep going, you're doing amazing...",
+    "Almost there, just a bit more...",
+    "Your journey matters...",
+    "You've come so far...",
+    "Welcome home...",
   ];
 
   const moveForward = () => {
     setCharacterPosition(prev => {
-      const newZ = prev[2] - 1;
-      setStepCount(s => s + 1);
+      const newZ = prev[2] - 2.5; // Move 2.5 units per step (faster)
+      const newStepCount = stepCount + 1;
+      setStepCount(newStepCount);
       
-      if (newZ <= -11) {
+      // Check if reached door (8 steps: 12 - 8*2.5 = -8)
+      if (newStepCount >= 8) {
         setReachedDoor(true);
         setTimeout(() => setShowKnockPrompt(true), 500);
         return [prev[0], prev[1], -11];
@@ -629,37 +637,53 @@ const Arrival = ({ data = { recipientName: 'You', senderName: 'Me' }, onNext = (
     });
   };
 
-  const knockDoor = () => {
-    setPlayKnockSound(true);
-    setShowKnockPrompt(false);
+const knockDoor = () => {
+  setPlayKnockSound(true);
+  setShowKnockPrompt(false);
+  
+  // Create realistic "Ding Dong" doorbell sound
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  
+  const createBell = (frequency: number, startTime: number, duration: number) => {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
     
-    // Simulate knock sound with audio context
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const playKnock = (delay: number) => {
-      setTimeout(() => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.value = 200;
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.1);
-      }, delay);
-    };
+    oscillator.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(audioContext.destination);
     
-    playKnock(0);
-    playKnock(300);
-    playKnock(600);
+    oscillator.frequency.value = frequency;
+    oscillator.type = 'sine';
     
-    setTimeout(() => onNext(), 2000);
+    filter.type = 'lowpass';
+    filter.frequency.value = 2000;
+    
+    const now = audioContext.currentTime + startTime;
+    gainNode.gain.setValueAtTime(0.4, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+    
+    oscillator.start(now);
+    oscillator.stop(now + duration);
   };
+  
+  // DING - E note (659 Hz)
+  createBell(659, 0, 0.5);
+  
+  // DONG - C note (523 Hz)  
+  createBell(523, 0.35, 0.6);
+  
+  // Echo effect for realism
+  createBell(659, 0.05, 0.4);
+  createBell(523, 0.4, 0.5);
+  
+  // Move to next scene
+  setTimeout(() => onNext(), 2500);
+};
+
+
+
+  const remainingSteps = Math.max(0, 8 - stepCount);
 
   return (
     <div className="w-full h-screen relative bg-gradient-to-b from-[#000814] via-[#0a1929] to-[#001233] overflow-hidden">
@@ -690,67 +714,59 @@ const Arrival = ({ data = { recipientName: 'You', senderName: 'Me' }, onNext = (
 
       {/* Title */}
       {!isStarted && (
-        <div className="absolute top-12 left-1/2 sm:left-1/3 transform -translate-x-1/2 text-center z-10 px-4">
-          <h1 className="text-3xl md:text-6xl font-semi-bold text-white/50 drop-shadow-lg drop-shadow-2xl mb-3">
-            Hii {data.recipientName}
-          </h1>
-          <p className="text-xl md:text-2xl text-blue-200 drop-shadow-lg">
-            {/* From {data.senderName}  */}
-          </p>
-          <p className="text-base md:text-xl text-blue-300/80 drop-shadow-lg mt-4 italic">
-            {/* "The most beautiful journeys are the ones we take together" */}
+        <div className="absolute top-14 md:top-12 left-[40%] sm:left-1/3 transform -translate-x-1/2 text-center z-10 px-4 max-w-4xl">
+         
+          <p className="whitespace-nowrap text-1xl sm:text-2xl text-blue-200 drop-shadow-lg">
+          Click start button to walk to the door
+
           </p>
         </div>
       )}
 
-      {/* Progressive Walking Messages */}
+      {/* Simple Walking Message */}
       {isStarted && !reachedDoor && stepCount > 0 && (
-        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-center z-10 w-full px-4">
-          <div className="bg-black/50 backdrop-blur-md rounded-2xl py-4 px-6 max-w-2xl mx-auto border border-white/20">
-            <p className="text-white text-lg md:text-2xl font-semibold mb-2">
-              Dear {data.recipientName},
-            </p>
-            <p className="text-blue-200 text-base md:text-xl italic">
-              {messages[Math.min(stepCount - 1, messages.length - 1)]}
-            </p>
-            <p className="text-white/60 text-sm mt-2">
-              Step {stepCount} of {messages.length}
+        <div className="whitespace-nowrap absolute top-8 md:top-12 left-[45%] sm:left-1/3 transform -translate-x-1/2 text-center z-10 w-full px-4">
+          <div className="rounded-2xl py-4 px-6 max-w-xl mx-auto ">
+            <p className="text-blue-200 text-sm md:text-2xl italic">
+              {messages[stepCount - 1]}
             </p>
           </div>
         </div>
       )}
 
-      {/* Start Button - Glass effect */}
+      {/* Start Button */}
       {!isStarted && (
-        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="absolute bottom-16 md:bottom-24 left-1/2 transform -translate-x-1/2 z-10">
           <button
             onClick={() => setIsStarted(true)}
-            className="bg-white/20 backdrop-blur-md border-2 border-white/30 text-white px-12 py-6 rounded-full text-2xl font-bold shadow-2xl hover:bg-white/30 hover:scale-105 transition-all"
+            className="bg-white/20 backdrop-blur-md border-2 border-white/30 text-white px-8 py-2 md:px-12 md:py-2 rounded-full text-lg md:text-2xl font-bold shadow-2xl hover:bg-white/30 hover:scale-105 transition-all"
           >
-            🚶 Let's Start the Journey
+           Start
           </button>
         </div>
       )}
 
       {/* Forward Arrow Button */}
       {isStarted && !reachedDoor && (
-        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="absolute bottom-16 md:bottom-24 left-1/2 transform -translate-x-1/2 z-10">
           <button
             onClick={moveForward}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white w-20 h-20 rounded-full text-4xl font-bold shadow-2xl hover:scale-110 active:scale-95 transition-transform flex items-center justify-center"
+            className="bg-white/20 backdrop-blur-md border-2 border-white/30 text-white  w-16 h-16 md:w-20 md:h-20 rounded-full text-3xl md:text-4xl font-bold shadow-2xl hover:scale-110 active:scale-95 transition-transform flex items-center justify-center"
           >
             ↑
           </button>
-          <p className="text-white text-center mt-3 text-sm">Click to move forward</p>
+          <p className="text-white text-center mt-2 text-sm">
+            {remainingSteps} steps left
+          </p>
         </div>
       )}
 
       {/* Knock Door Prompt */}
       {showKnockPrompt && (
-        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="absolute bottom-16 md:bottom-24 left-1/2 transform -translate-x-1/2 z-10">
           <button
             onClick={knockDoor}
-            className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-12 py-6 rounded-full text-2xl font-bold shadow-2xl hover:scale-110 transition-transform animate-bounce"
+            className="whitespace-nowrap bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 md:px-8 md:py-4 rounded-full text-lg md:text-2xl font-bold shadow-2xl hover:scale-110 transition-transform animate-bounce"
           >
             🚪 Knock the Door
           </button>
@@ -759,7 +775,7 @@ const Arrival = ({ data = { recipientName: 'You', senderName: 'Me' }, onNext = (
 
       {/* Knock Sound Indicator */}
       {playKnockSound && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-6xl animate-ping z-10">
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-4xl md:text-6xl animate-ping z-10">
           🔊
         </div>
       )}
@@ -768,3 +784,4 @@ const Arrival = ({ data = { recipientName: 'You', senderName: 'Me' }, onNext = (
 };
 
 export default Arrival;
+

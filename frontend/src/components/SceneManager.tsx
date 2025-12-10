@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import Arrival from '../scenes/Arrival';
-import DoorScene from '../scenes/DoorScene';
-// import DarkRoom from '../scenes/DarkRoom';
-// import Celebration from '../scenes/Celebration';
+import CakeScene from '../scenes/CakeScene';
 // import Gallery from '../scenes/Gallery';
 // import Finale from '../scenes/Finale';
-import {type ExperienceData } from '../types/experience';
+import { type ExperienceData } from '../types/experience';
 
 interface Props {
   data: ExperienceData;
@@ -16,9 +14,7 @@ const SceneManager = ({ data }: Props) => {
   
   const scenes = [
     { component: Arrival, name: 'arrival' },
-    { component: DoorScene, name: 'door' },
-    // { component: DarkRoom, name: 'darkRoom' },
-    // { component: Celebration, name: 'celebration' },
+    { component: CakeScene, name: 'cake' },
     // { component: Gallery, name: 'gallery' },
     // { component: Finale, name: 'finale' },
   ];
